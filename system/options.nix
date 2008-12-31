@@ -114,11 +114,11 @@ in
     kernelParams = mkOption {
       default = [
         "selinux=0"
-        "apm=on"
-        "acpi=on"
-        "vga=0x317"
-        "console=tty1"
-        "splash=verbose"
+        #"apm=on"
+        #"acpi=on"
+        #"vga=0x317"
+        #"console=tty1"
+        #"splash=verbose"
       ];
       description = "
         The kernel parameters.  If you want to add additional
