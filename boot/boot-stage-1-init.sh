@@ -118,8 +118,8 @@ if test -e /sys/power/tuxonice/resume; then
     fi
 fi
 
-echo "@resumeDevice@" > /sys/power/resume 2> /dev/null || echo "Failed to resume..."
-echo shutdown > /sys/power/disk
+#echo "@resumeDevice@" > /sys/power/resume 2> /dev/null || echo "Failed to resume..."
+#echo shutdown > /sys/power/disk
 
 
 # Create device nodes in /dev.

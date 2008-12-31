@@ -29,7 +29,8 @@ mkdir -m 0755 -p /etc
 test -e /etc/fstab || touch /etc/fstab # to shut up mount
 mkdir -m 0755 -p /proc
 mount -n -t proc none /proc
-[ -s /etc/mtab ] && rm /etc/mtab # while installing a symlink is created (see man mount), if it's still there for whateever reason remove it
+#[ -s /etc/mtab ] && rm /etc/mtab # while installing a symlink is created (see man mount), if it's still there for whateever reason remove it
+rm -f /etc/mtab
 cat /proc/mounts > /etc/mtab
 mkdir -m 0755 -p /etc/nixos
 
