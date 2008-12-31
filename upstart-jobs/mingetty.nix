@@ -1,7 +1,8 @@
 {mingetty, ttyNumber, loginProgram}:
 
 {
-  name = "tty" + toString ttyNumber;
+  #name = "tty" + toString ttyNumber;
+  name = "hvc" + toString ttyNumber;
   job = "
     start on startup
     stop on shutdown
