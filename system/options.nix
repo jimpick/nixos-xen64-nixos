@@ -707,7 +707,8 @@ in
     mingetty = {
 
       ttys = mkOption {
-        default = [1 2 3 4 5 6];
+        #default = [1 2 3 4 5 6];
+        default = [0];
         description = "
           The list of tty (virtual console) devices on which to start a
           login prompt.
