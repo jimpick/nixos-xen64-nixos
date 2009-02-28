@@ -1,6 +1,7 @@
 { platform ? __currentSystem
 , configuration
 , nixpkgsPath ? ../../nixpkgs
+, nixpkgs ? null
 }:
 
 rec {
@@ -26,7 +27,9 @@ rec {
       pkgs configComponents
       config;
 
-  pkgs = import "${nixpkgsPath}/pkgs/top-level/all-packages.nix" {system = platform;};
+  pkgs = if nixpkgs == null then 
+    import "${nixpkgsPath}/pkgs/top-level/all-packages.nix" {system = platform;}
+  else nixpkgs;
 
   manifests = config.installer.manifests; # exported here because nixos-rebuild uses it
 
@@ -103,7 +106,15 @@ rec {
         export NIX_REMOTE_SYSTEMS=/etc/nix.machines
         export NIX_CURRENT_LOAD=/var/run/nix/current-load
       ''
-    else "");
+    else "")
+    +
+    (if config.nix.proxy != "" then
+    ''
+        export http_proxy=${config.nix.proxy}
+        export https_proxy=${config.nix.proxy}
+        export ftp_proxy=${config.nix.proxy}
+    '' else "")
+    ;
 
               
   # The services (Upstart) configuration for the system.
@@ -215,6 +226,7 @@ rec {
     pkgs.usbutils
     pkgs.utillinux
     pkgs.wirelesstools
+    (import ../helpers/info-wrapper.nix {inherit (pkgs) bash texinfo writeScriptBin;})
   ]
   ++ pkgs.lib.optional config.security.sudo.enable pkgs.sudo
   ++ pkgs.lib.optional config.services.atd.enable pkgs.at
@@ -254,6 +266,15 @@ rec {
     inherit (config.environment) pathsToLink;
 
     ignoreCollisions = true;
+
+    postBuild =
+      if config.services.xserver.sessionType == "kde4" then
+        # Rebuild the MIME database.  Otherwise KDE won't be able to
+        # find many MIME types.
+        ''
+          ${pkgs.shared_mime_info}/bin/update-mime-database $out/share/mime
+        ''
+      else "";
   };
 
 
@@ -289,10 +310,10 @@ rec {
     inherit (usersGroups) createUsersGroups usersList groupsList;
 
     path = [
-        pkgs.coreutils pkgs.gnugrep pkgs.findutils
-        pkgs.glibc # needed for getent
-        pkgs.pwdutils
-      ];
+      pkgs.coreutils pkgs.gnugrep pkgs.findutils
+      pkgs.glibc # needed for getent
+      pkgs.pwdutils
+    ];
 
     adjustSetuidOwner = pkgs.lib.concatStrings (map 
       (_entry: let entry = {

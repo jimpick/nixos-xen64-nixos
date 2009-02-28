@@ -1,4 +1,4 @@
-{stdenv, hal}:
+{stdenv, hal, config}:
 
 {
   name = "hal";
@@ -21,7 +21,9 @@
   job = ''
     description "HAL daemon"
 
-    start on dbus
+    # !!! TODO: make sure that HAL starts after acpid,
+    # otherwise hald-addon-acpi will grab /proc/acpi/event.
+    start on ${if config.powerManagement.enable then "acpid" else "dbus"}
     stop on shutdown
 
     start script

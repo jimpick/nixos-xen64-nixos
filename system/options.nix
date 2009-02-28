@@ -1,13 +1,13 @@
-pkgs: config:
+{pkgs, config, ...}:
 
 let
   inherit (pkgs.lib) mkOption;
   inherit (builtins) head tail;
 
-  obsolete = what: f: name:
+  obsolete = what: f:
     if builtins ? trace then
-      builtins.trace "${name}: Obsolete ${what}." f name
-    else f name;
+      builtins.trace "Obsolete ${what}." f
+    else f;
 
   obsoleteMerge =
     obsolete "option" pkgs.lib.mergeDefaultOption;
@@ -15,18 +15,18 @@ let
   # temporary modifications.
   # backward here means that expression could either be a value or a
   # function which expects to have a pkgs argument.
-  optionalPkgs = name: x:
+  optionalPkgs = x:
     if builtins.isFunction x
-    then obsolete "notation" (name: x pkgs) name
+    then obsolete "notation" (x pkgs)
     else x;
 
-  backwardPkgsFunListMerge = name: list:
-    pkgs.lib.concatMap (optionalPkgs name) list;
+  backwardPkgsFunListMerge = list:
+    pkgs.lib.concatMap optionalPkgs list;
 
-  backwardPkgsFunMerge = name: list:
+  backwardPkgsFunMerge = list:
     if list != [] && tail list == []
-    then optionalPkgs name (head list)
-    else abort "${name}: Defined at least twice.";
+    then optionalPkgs (head list)
+    else abort "Defined at least twice.";
 
 in
 
@@ -81,7 +81,7 @@ in
       example = "0:0";
       description = "
         Device for manual resume attempt during boot. Looks like 
-        major:minor .
+        major:minor. ls -l /dev/SWAP_PARTION shows them.
       ";
     };
 
@@ -966,18 +966,6 @@ in
         ";
       };
 
-    };
-
-    portmap = {
-
-      enable = mkOption {
-        default = false;
-        description = ''
-          Whether to enable `portmap', an ONC RPC directory service
-          notably used by NFS and NIS, and which can be queried
-          using the rpcinfo(1) command.
-        '';
-      };
     };
 
     avahi = {
@@ -2683,6 +2671,16 @@ in
       ";
     };
 
+    proxy = mkOption {
+        default = "";
+	description = "
+	  This option specifies the proxy to use for fetchurl. The real effect 
+	  is just exporting http_proxy, https_proxy and ftp_proxy with that
+	  value.
+	";
+	example = "http://127.0.0.1:3128";
+    };
+
   };
 
 
@@ -2950,7 +2948,7 @@ root        ALL=(ALL) SETENV: ALL
   environment = {
 
     pathsToLink = mkOption {
-      default = ["/bin" "/sbin" "/lib" "/share" "/man" "/info"];
+      default = ["/bin" "/sbin" "/lib" "/share" "/man" "/info" "/etc"];
       example = ["/"];
       description = "
         Lists directories to be symlinked in `/var/run/current-system/sw'.
@@ -3024,7 +3022,20 @@ root        ALL=(ALL) SETENV: ALL
     };
 
   };
+
+    
+  powerManagement = {
+    
+    enable = mkOption {
+      default = false;
+      description = "
+        Whether to enable power management.
+      ";
+    };
+
+  };
   
+
   nesting = {
     children = mkOption {
       default = [];
@@ -3034,6 +3045,7 @@ root        ALL=(ALL) SETENV: ALL
     };
   };
 
+  
   passthru = mkOption {
     default = {};
     description = "
@@ -3054,5 +3066,10 @@ root        ALL=(ALL) SETENV: ALL
     (import ../upstart-jobs/cron.nix)
     (import ../upstart-jobs/fcron.nix)
     (import ../upstart-jobs/cron/locate.nix)
+    (import ../upstart-jobs/manual.nix)
+    (import ../upstart-jobs/rogue.nix)
+    (import ../upstart-jobs/guest-users.nix)
+    (import ../upstart-jobs/pulseaudio.nix)
+    (import ../upstart-jobs/portmap.nix)
   ];
 }

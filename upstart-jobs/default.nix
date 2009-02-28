@@ -97,7 +97,8 @@ let
         ++ pkgs.lib.optional config.networking.enableIntel4965AGNFirmware kernelPackages.iwlwifi4965ucode
         ++ pkgs.lib.optional config.networking.enableZydasZD1211Firmware pkgs.zd1211fw
         ++ pkgs.lib.optional config.hardware.enableGo7007 "${kernelPackages.wis_go7007}/firmware"
-        ++ config.services.udev.addFirmware;
+        ++ config.services.udev.addFirmware
+        ++ ["${kernelPackages.kernel}/lib/firmware"];
       extraUdevPkgs =
            pkgs.lib.optional config.services.hal.enable pkgs.hal
         ++ pkgs.lib.optional config.hardware.enableGo7007 kernelPackages.wis_go7007
@@ -219,12 +220,6 @@ let
       servers = config.services.ntp.servers;
     })
 
-  # portmap daemon.
-  ++ optional config.services.portmap.enable
-    (import ../upstart-jobs/portmap.nix {
-      inherit (pkgs) makePortmap;
-     })
-
   # Avahi daemon.
   ++ optional config.services.avahi.enable
     (import ../upstart-jobs/avahi-daemon.nix {
@@ -300,7 +295,7 @@ let
   # CUPS (printing) daemon.
   ++ optional config.services.printing.enable
     (import ../upstart-jobs/cupsd.nix {
-      inherit config pkgs;
+      inherit config pkgs modprobe;
     })
 
   # Gateway6
@@ -341,6 +336,12 @@ let
       inherit (pkgs) alsaUtils;
     })
 
+  # ACPI daemon.
+  ++ optional config.powerManagement.enable
+    (import ../upstart-jobs/acpid.nix {
+      inherit config pkgs;
+    })
+
   # D-Bus system-wide daemon.
   ++ optional config.services.dbus.enable
     (import ../upstart-jobs/dbus.nix {
@@ -356,6 +357,7 @@ let
   ++ optional config.services.hal.enable
     (import ../upstart-jobs/hal.nix {
       inherit (pkgs) stdenv hal;
+      inherit config;
     })
 
   ++ optional config.services.gpm.enable 

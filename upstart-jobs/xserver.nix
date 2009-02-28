@@ -22,6 +22,8 @@ let
     intel = { modules = [xorg.xf86videointel]; };
     nv =    { modules = [xorg.xf86videonv]; };
     ati =   { modules = [xorg.xf86videoati]; };
+    via =   { modules = [xorg.xf86videovia]; };
+    cirrus = { modules = [xorg.xf86videocirrus]; };
   };
 
   # Get a bunch of user settings.
@@ -43,6 +45,7 @@ let
     if wm != "" then wm else
     if sessionType == "gnome" then "metacity" else
     if sessionType == "kde" then "none" /* started by startkde */ else
+    if sessionType == "kde4" then "none" /* started by startkde */ else
     "twm";
 
     
@@ -273,7 +276,7 @@ let
 
     ### Show a background image.
     # (but not if we're starting a full desktop environment that does it for us)
-    ${if sessionType != "kde" then ''
+    ${if sessionType != "kde" && sessionType != "kde4" then ''
     
       if test -e $HOME/.background-image; then
         ${pkgs.feh}/bin/feh --bg-scale $HOME/.background-image
@@ -290,6 +293,11 @@ let
       export XDG_CONFIG_DIRS=${pkgs.kdebase}/etc/xdg:${pkgs.kdelibs}/etc/xdg
       export XDG_DATA_DIRS=${pkgs.kdebase}/share
       exec ${pkgs.kdebase}/bin/startkde
+
+    '' else if sessionType == "kde4" then ''
+
+      # Start KDE.
+      exec ${pkgs.kde42.kdebase_workspace}/bin/startkde
 
     '' else ''
 
@@ -381,13 +389,24 @@ rec {
     pkgs.kdebase
     xorg.xset # used by startkde, non-essential
   ]
+  ++ optional (sessionType == "kde4") [
+    xorg.xmessage # so that startkde can show error messages
+    pkgs.qt4 # needed for qdbus
+    pkgs.kde42.kdelibs
+    pkgs.kde42.kdebase
+    pkgs.kde42.kdebase_runtime
+    pkgs.kde42.kdebase_workspace
+    pkgs.kde42.kdegames
+    pkgs.shared_mime_info
+    xorg.xset # used by startkde, non-essential
+  ]
   ++ optional (videoDriver == "nvidia") [
     kernelPackages.nvidiaDrivers
   ];
 
 
   extraEtc =
-    optional (sessionType == "kde")
+    optional (sessionType == "kde" || sessionType == "kde4")
       { source = "${pkgs.xkeyboard_config}/etc/X11/xkb";
         target = "X11/xkb";
       }
@@ -414,6 +433,8 @@ rec {
        }
 
       rm -f /var/log/slim.log
+
+      rm -f /tmp/.X0-lock
        
     end script
 
